@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="../css/spaceInvaders.css" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Sigmar+One|Press+Start+2P|Fjalla+One" rel="stylesheet">
+    <title>Space Invaders</title>
+</head>
+<body id='background'>
+    <div id="container">
+        <div id="header">
+            <div id="first" style="display:inline">
+                <a href="../html/JS_arcade.html"> < BACK</a>
+            </div>
+            <h1 id = "last" style="display:inline">
+                Invaders
+            </h1>
+        </div>
+    
+
+        <div id="screen">
+            <canvas id="gc" width="600" height="600" style="border:10px solid #4B0082;"></canvas>
+        </div>
+    </div>
+
+<script type="text/javascript">
+
+score=0;
+frameRate=60;
+yVel=0;
+xVel=0;
+enemyArrs=[];
+lastEnX=-5;
+lastEnCounter=0;
+px=10;
+py=17;
+tc=20;
+gs=30;
+enemyDensity=2;
+difficulty=10;
+counter=0;
+speedDivisor=5;
+enemySpeed=gs/speedDivisor;
+LEFT=false;
+RIGHT=false;
+FIRE=false;
+fireRate=3;
+bullets=[];
+bulletCounter=0;
+lives=3;
+gameOver=false;
+imgLoaded=false;
+bkgroundLoaded=false;
+
+
+
+window.onload=function() {
+	canv=document.getElementById("gc");
+	ctx=canv.getContext("2d"); 
+    img = new Image();
+    img.online = function(){
+      	imgLoaded=true;
+    }
+    img.src="../images/rocket.png";
+  
+    bkground = new Image();
+    bkground.online = function(){
+     	bkgroundLoaded=true; 
+    }
+    bkground.src="../images/space.png";
+  
+    ufo = new Image();
+    ufo.online = function(){
+     	bkgroundLoaded=true; 
+    }
+    ufo.src="../images/ufo1.png";
+  
+    bullet = new Image();
+    bullet.online = function(){
+     	bkgroundLoaded=true; 
+    }
+    bullet.src="../images/bullet.png";  
+  
+    
+    if(imgLoaded && bkgroundLoaded){
+      	run();
+    }
+    run();
+}
+
+function run(){
+
+	game();
+	setTimeout(run, frameRate);
+	
+}
+
+function getEnemies(){
+	enemies=[];
+	for(var i = 0; i<numEnemsOnRow; i++){
+		x=Math.floor(Math.random()*tc)
+		while(x==lastEnX){
+			x=Math.floor(Math.random()*tc);
+		}
+		lastEnX=x;
+		y=-5;
+		enemies.push({x:x,y:y});
+	}
+	enemyArrs.push(enemies);
+	lastEnCounter=0;
+	lastEnX=-5;
+
+}
+
+function game(){
+
+	if(gameOver == true){
+      	ctx.drawImage(bkground, 0,0,canv.width,canv.height);
+		ctx.fillStyle="yellow";
+		ctx.font="18px Georgia";
+		ctx.fillText("score: " + score, canv.width - 150, 20);
+        ctx.fillStyle="red";
+		ctx.font="30px Georgia";
+        ctx.fillText("GAME OVER", 220, 280 );
+      
+        return 0;
+    }
+    ctx.drawImage(bkground, 0,0,canv.width,canv.height);
+	ctx.fillStyle="yellow";
+	ctx.font="18px Georgia";
+	ctx.fillText("score: " + score, canv.width - 150,20);
+    
+    ctx.fillStyle="red";
+    ctx.font="font-family: 'Press Start 2P', cursive;";
+    if(lives == 3){
+    	ctx.fillText("\u2764\u2764\u2764", 375, 20);
+    }else if(lives == 2){
+    	ctx.fillText("\u2764\u2764", 375, 20);
+    }else if(lives == 1){
+    	ctx.fillText("\u2764", 375, 20);
+    }
+	
+	if(counter == speedDivisor){
+	
+		counter=0;
+	
+	}
+	
+	rand=Math.floor(Math.random()*100);
+	numEnemsOnRow=Math.floor(Math.random()*enemyDensity);
+	numEnemsOnRow++;
+	if(rand < difficulty && counter==0){
+	
+		getEnemies();
+		
+	}else if(lastEnCounter==100){
+	
+		getEnemies();
+	
+	}else{
+		lastEnCounter++;
+	}
+
+	if(LEFT==true && px>0){
+		px-=1;
+	}
+	if(RIGHT==true && px<tc-1){
+		px+=1;
+	}
+
+    ctx.drawImage(img, px*gs, py*gs, gs, gs);
+    	
+	if(FIRE==true){
+		if(bulletCounter%fireRate == 0){
+			bullets.push({x:(px*gs)+10,y:py*gs - 3});
+		}
+		bulletCounter++;
+	}
+	
+	ctx.fillStyle="red";
+	
+  
+    //bullet animation and hit detection
+	for(var i=0; i<bullets.length; i++){
+		ctx.drawImage(bullet, bullets[i].x, bullets[i].y-7, gs/3, gs/3);
+		bullets[i].y-=gs;
+		for(var j=0; j<enemyArrs.length; j++){
+			for(var h=0; h<enemyArrs[j].length; h++){
+				if(bullets[i].x > enemyArrs[j][h].x*gs && bullets[i].x < enemyArrs[j][h].x*gs + gs
+				    && bullets[i].y > enemyArrs[j][h].y*enemySpeed - 10 && bullets[i].y < enemyArrs[j][h].y * enemySpeed + gs){
+					
+						enemyArrs[j].splice(h,1);
+						bullets[i].y=-5;
+						score+=10;
+						
+					}
+			}		
+		}
+	}	
+	if(bullets.length>15){
+	
+		bullets.splice(0, bullets.length-15);
+	
+	}
+    //enemy animation and hit detection
+	ctx.fillStyle="blueviolet";
+	for(var i=0; i<enemyArrs.length; i++){
+		for(var j=0; j<enemyArrs[i].length; j++){
+			enemyArrs[i][j].y++;
+			y=enemyArrs[i][j].y;
+			x=enemyArrs[i][j].x;
+			if(y>(canv.height/enemySpeed)){
+				enemyArrs[i].splice(j,1);
+                lives--;
+                if(lives == 0){
+                	gameOver=true; 
+                }
+			}
+            //console.log("X = " + x + " px = " + px);
+            if(x == px && y*(enemySpeed) >= py*gs - gs && y*(enemySpeed) <= py*gs + gs - 1 ){
+            	enemyArrs[i].splice(j,1);
+                lives--;
+                if(lives == 0){
+                	gameOver=true; 
+                }
+            }
+			ctx.drawImage(ufo, x*gs, y*(enemySpeed), gs, gs);
+		}			
+	}
+	
+	if(score%100==0 && score!=0 ){
+		difficulty+=1;
+		score+=10;
+	}
+	
+	counter++;
+}
+
+document.onkeydown = function(e) {
+	if(e.keyCode == 37) LEFT = true;
+	if(e.keyCode == 39) RIGHT = true;
+	if(e.keyCode == 32) FIRE = true;
+}
+
+document.onkeyup = function(e) {
+	if(e.keyCode == 37) LEFT = false;
+	if(e.keyCode == 39) RIGHT = false;
+	if(e.keyCode == 32){
+		FIRE = false; 
+		bulletCounter=0;
+	} 
+}
+
+
+
+</script>
+</body>
+</html>	
